@@ -10,33 +10,28 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
-      - name: Set up node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: npm
-      - name: Cache dependencies
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: ./node_modules
-          key: module-${{ hashFiles('package-lock.json') }}
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
+        uses: actions/checkout@v4
 
 
   test:
     needs: [checkout]
     runs-on: self-hosted
-
+    strategy:
+      matrix:
+        node-version: [20.x]
 
     steps:
-      - name: Run migrations
-        run: npm run db:migrate
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
       - name: Decode .env file
         run: echo ${{ secrets.ENV_TEST_FILE }} | base64 -d > .env
+      - name: Run migrations
+        run: npm run db:migrate
+      - name: Install dependencies
+        run: npm ci
       - name: Tests e2e
         run: npm run test:e2e
 
@@ -45,13 +40,25 @@ jobs:
     needs: [test]
 
     steps:
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
       - name: Decode .env file
         run: echo ${{ secrets.DEVELOPMENT_ENV_FILE }} | base64 -d > .env
+      - name: Install dependencies
+        run: npm ci
       - name: Run migrations
         run: npm run db:migrate
       - name: Build
         run: npm run build
       - name: Run server
-        run: pm2 restart backend
+        run: |
+          if pm2 describe main > /dev/null; then
+            pm2 restart main --update-env
+          else
+            pm2 start dist/main.js --name main
+          fi
 
 
