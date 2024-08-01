@@ -5,7 +5,7 @@ on:
     branches: ["development"]
 
 jobs:
-  test:
+  checkout:
     runs-on: [self-hosed, development]
 
     steps:
@@ -25,6 +25,16 @@ jobs:
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+
+
+  test:
+    needs: [checkout]
+    runs-on: [self-hosed, development]
+
+
+    steps:
+      - name: Run migrations
+        run: npm run db:migrate
       - name: Decode .env file
         run: echo ${{ secrets.ENV_TEST_FILE }} | base64 -d > .env
       - name: Tests e2e
@@ -35,35 +45,12 @@ jobs:
     needs: [test]
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Set up node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Cache dependencies
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: ./node_modules
-          key: module-${{ hashFiles('package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: npm ci
-
       - name: Decode .env file
         run: echo ${{ secrets.DEVELOPMENT_ENV_FILE }} | base64 -d > .env
-
       - name: Run migrations
         run: npm run db:migrate
-
       - name: Build
         run: npm run build
-
       - name: Run server
         run: pm2 restart backend
 
