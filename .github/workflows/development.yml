@@ -28,7 +28,7 @@ jobs:
       - name: Decode .env file
         run: echo ${{ secrets.ENV_TEST_FILE }} | base64 -d > .env
       - name: Install latest Yarn
-        run: corepack prepare yarn@stable --activate
+        run: npm i -g yarn
       - name: Run migrations
         run: yarn db:migrate
       - name: Install dependencies
@@ -48,6 +48,8 @@ jobs:
           cache: 'npm'
       - name: Decode .env file
         run: echo ${{ secrets.DEVELOPMENT_ENV_FILE }} | base64 -d > .env
+      - name: Install latest Yarn
+        run: npm i -g yarn
       - name: Install dependencies
         run: yarn
       - name: Run migrations
