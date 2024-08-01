@@ -1,0 +1,16 @@
+name: Production deployment
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  checkout:
+    runs-on: [self-hosed, production]
+    steps:
+      - name: Checkout
+      uses: actions/checkout@v4
+
+  test:
+    needs: [checkout]
+    
