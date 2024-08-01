@@ -54,10 +54,10 @@ jobs:
         run: yarn build
       - name: Run server
         run: |
-          if pm2 describe main > /dev/null; then
-            pm2 restart main --update-env
+          if sudo pm2 describe main > /dev/null; then
+            sudo pm2 restart main --update-env
           else
-            pm2 start dist/main.js --name main
+            sudo pm2 start dist/main.js --name main
           fi
 
 
